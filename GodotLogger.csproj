@@ -1,0 +1,42 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+
+        <Version>0.1.0-dev4</Version>
+        <Authors>gamedo</Authors>
+        <AssemblyName>Gamedo.GodotLogger</AssemblyName>
+        <PackageId>Gamedo.GodotLogger</PackageId>
+
+        <Description>A Microsoft.Extensions.Logging provider for Godot 4 with colored, template-driven output.</Description>
+        <PackageTags>godot;logging;logger;microsoft-extensions-logging;dotnet</PackageTags>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <RepositoryUrl>https://github.com/pcloves/GodotLogger</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageProjectUrl>https://github.com/pcloves/GodotLogger</PackageProjectUrl>
+
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+
+        <Deterministic>true</Deterministic>
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="GodotSharp" Version="4.6.2"/>
+        <PackageReference Include="JetBrains.Annotations" Version="2025.2.4" />
+        <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.7"/>
+        <PackageReference Include="Microsoft.Extensions.Logging.Configuration" Version="10.0.7"/>
+        <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.7"/>
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="README.md" Pack="true" PackagePath="\"/>
+    </ItemGroup>
+
+</Project>
