@@ -4,17 +4,26 @@ using Microsoft.Extensions.Logging;
 namespace GodotLogger;
 
 /// <summary>
-///     An <see cref="ILogger" /> implementation that writes log output to the Godot console with
-///     template-driven formatting and color support.
+///     An <see cref="ILogger" /> implementation for Godot with template-driven formatting and color support.
+///     <para>
+///     <b>Message output</b><br/>
+///     The template only formats the log message. Exception text is always printed separately
+///     via <c>GD.PrintErr</c>, regardless of mode.
+///     </para>
+///     <para>
+///     <b>Mode behavior</b><br/>
+///     <see cref="LoggerMode.Debug" /> — uses <c>GD.PrintRich</c> with
+///     <c>GD.PushWarning</c>/<c>GD.PushError</c> for the Debugger panel when severity is
+///     <see cref="LogLevel.Warning" /> or higher.<br/>
+///     <see cref="LoggerMode.Release" /> — uses <c>GD.Print</c> with no Debugger integration.
+///     </para>
 /// </summary>
 /// <param name="name">The category name for this logger instance.</param>
 /// <param name="configProvider">A delegate that returns the current <see cref="GodotLoggerConfiguration" />.</param>
-public class GodotLogger(string name, Func<GodotLoggerConfiguration> configProvider)
-    : ILogger
+public class GodotLogger(string name, Func<GodotLoggerConfiguration> configProvider) : ILogger
 {
     /// <summary>
-    ///     Writes a log entry to the Godot console using <c>GD.PrintRich</c>,
-    ///     <c>GD.PushWarning</c>, or <c>GD.PushError</c> depending on the log level.
+    ///     Writes a log entry to the Godot console.
     /// </summary>
     /// <param name="logLevel">The severity level of the log entry.</param>
     /// <param name="eventId">The event ID associated with the log entry.</param>
@@ -32,25 +41,33 @@ public class GodotLogger(string name, Func<GodotLoggerConfiguration> configProvi
         if (!IsEnabled(logLevel)) return;
 
         var config = configProvider();
-        var exceptionString = exception?.ToString() ?? string.Empty;
         var message = formatter(state, exception);
+        var isDebug = config.Mode == LoggerMode.Debug;
 
-        var template = LogTemplate.Parse(config.OutputTemplate);
-        var rendered = template.Render(new RenderContext(
-            name, logLevel, message, exceptionString,
-            config.GetColor(logLevel)));
+        var templateConfig = isDebug ? config.DebugOutputTemplate : config.ReleaseOutputTemplate;
+        var template = LogTemplate.Parse(templateConfig);
+        var renderContext = new RenderContext(name, logLevel, message, string.Empty, config.GetColor(logLevel));
+        var rendered = template.Render(renderContext);
 
-        switch (logLevel)
+        if (isDebug)
+            GD.PrintRich(rendered);
+        else
+            GD.Print(rendered);
+
+        if (exception is not null)
+            GD.PrintErr(exception.ToString());
+
+        if (isDebug)
         {
-            case LogLevel.Error or LogLevel.Critical:
-                GD.PushError(rendered);
-                break;
-            case LogLevel.Warning:
-                GD.PushWarning(rendered);
-                break;
-            default:
-                GD.PrintRich(rendered);
-                break;
+            switch (logLevel)
+            {
+                case LogLevel.Error or LogLevel.Critical:
+                    GD.PushError(rendered);
+                    break;
+                case LogLevel.Warning:
+                    GD.PushWarning(rendered);
+                    break;
+            }
         }
     }
 
@@ -68,5 +85,5 @@ public class GodotLogger(string name, Func<GodotLoggerConfiguration> configProvi
     /// <param name="state">The scope state.</param>
     /// <typeparam name="TState">The type of the scope state.</typeparam>
     /// <returns>A disposable scope handle, or <see langword="null" />.</returns>
-    public IDisposable? BeginScope<TState>(TState state) where TState : notnull => default;
+    public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
 }

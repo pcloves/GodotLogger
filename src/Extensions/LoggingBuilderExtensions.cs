@@ -87,40 +87,6 @@ public static class LoggingBuilderExtensions
     }
 
     /// <summary>
-    ///     Registers the Godot logger provider with configuration from an <see cref="IConfiguration" /> source.
-    /// </summary>
-    /// <param name="builder">The <see cref="ILoggingBuilder" /> to add the provider to.</param>
-    /// <param name="configuration">The configuration to bind to <see cref="GodotLoggerConfiguration" />.</param>
-    /// <returns>The same <paramref name="builder" /> for chaining.</returns>
-    public static ILoggingBuilder AddGodotLogger(this ILoggingBuilder builder, IConfiguration configuration)
-    {
-        builder.Services.AddSingleton(configuration);
-        return builder.AddGodotLogger();
-    }
-
-    /// <summary>
-    ///     Registers the Godot logger provider with configuration loaded from a JSON file.
-    /// </summary>
-    /// <param name="builder">The <see cref="ILoggingBuilder" /> to add the provider to.</param>
-    /// <param name="configFilePath">Path to the JSON configuration file.</param>
-    /// <returns>The same <paramref name="builder" /> for chaining.</returns>
-    public static ILoggingBuilder AddGodotLogger(this ILoggingBuilder builder, string configFilePath)
-    {
-        var configuration = new ConfigurationBuilder()
-            .AddJsonFile(configFilePath, optional: true, reloadOnChange: true)
-            .Build();
-
-        builder.Services.AddSingleton(configuration);
-
-        builder.AddConfiguration(configuration.GetSection("Logging"));
-
-        builder.Services.TryAddEnumerable(ServiceDescriptor.Singleton<ILoggerProvider, GodotLoggerProvider>());
-        LoggerProviderOptions.RegisterProviderOptions<GodotLoggerConfiguration, GodotLoggerProvider>(builder.Services);
-
-        return builder;
-    }
-
-    /// <summary>
     ///     Registers the Godot logger provider with configuration specified by a delegate.
     /// </summary>
     /// <param name="builder">The <see cref="ILoggingBuilder" /> to add the provider to.</param>

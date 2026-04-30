@@ -11,8 +11,25 @@ namespace GodotLogger;
 [PublicAPI]
 public static class GodotLog
 {
-    private static readonly Lazy<ILoggerFactory> LazyFactory =
-        new(() => LoggerFactory.Create(builder => builder.AddGodotLogger()));
+    private static Action<GodotLoggerConfiguration>? _configure;
+
+    private static readonly Lazy<ILoggerFactory> LazyFactory = new(() => LoggerFactory.Create(builder =>
+    {
+        if (_configure != null)
+            builder.AddGodotLogger(_configure);
+        else
+            builder.AddGodotLogger();
+    }));
+
+    /// <summary>
+    ///     Configures the Godot logger with the specified delegate.
+    ///     Must be called before the first access to <see cref="Factory" /> or <see cref="CreateLogger{T}" />.
+    /// </summary>
+    /// <param name="configure">A delegate to configure <see cref="GodotLoggerConfiguration" />.</param>
+    public static void Configure(Action<GodotLoggerConfiguration> configure)
+    {
+        _configure = configure;
+    }
 
     /// <summary>
     ///     Gets the global <see cref="ILoggerFactory" /> instance pre-configured with the Godot logger provider.
