@@ -6,20 +6,13 @@ namespace GodotLogger;
 
 /// <summary>
 ///     Static entry point for quickly creating Godot loggers without explicit DI setup.
+///     Configuration is auto-discovered (environment variable, executable directory, project root).
 /// </summary>
 [PublicAPI]
 public static class GodotLog
 {
-    private const string DefaultConfigFile = "appsettings.json";
-
     private static readonly Lazy<ILoggerFactory> LazyFactory =
-        new(() => LoggerFactory.Create(builder => builder.AddGodotLogger(ConfigFilePath ?? DefaultConfigFile)));
-
-    /// <summary>
-    ///     Gets or sets the JSON configuration file path. Must be set before the first call to
-    ///     <see cref="Factory" /> or <see cref="CreateLogger{T}" />. Default: <c>"appsettings.json"</c>.
-    /// </summary>
-    public static string ConfigFilePath { get; set; } = DefaultConfigFile;
+        new(() => LoggerFactory.Create(builder => builder.AddGodotLogger()));
 
     /// <summary>
     ///     Gets the global <see cref="ILoggerFactory" /> instance pre-configured with the Godot logger provider.
