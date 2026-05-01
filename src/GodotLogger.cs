@@ -46,7 +46,7 @@ public class GodotLogger(string name, Func<GodotLoggerConfiguration> configProvi
 
         var templateConfig = isDebug ? config.DebugOutputTemplate : config.ReleaseOutputTemplate;
         var template = LogTemplate.Parse(templateConfig);
-        var renderContext = new RenderContext(name, logLevel, message, string.Empty, config.GetColor(logLevel));
+        var renderContext = new RenderContext(name, logLevel, message, config.GetColor(logLevel));
         var rendered = template.Render(renderContext);
 
         if (isDebug)
