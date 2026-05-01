@@ -68,7 +68,16 @@ public static class GodotLog
     /// <summary>
     ///     Gets the global <see cref="ILoggerFactory" /> instance pre-configured with the Godot logger provider.
     /// </summary>
-    public static ILoggerFactory Factory => LazyFactory.Value;
+    public static ILoggerFactory Factory
+    {
+        get
+        {
+            lock (ConfigureLock)
+            {
+                return LazyFactory.Value;
+            }
+        }
+    }
 
     /// <summary>
     ///     Creates an <see cref="ILogger{T}" /> for the specified type. The returned instance is a
