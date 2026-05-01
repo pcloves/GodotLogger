@@ -20,26 +20,21 @@ internal sealed partial class LogTemplate
 
     private Action<StringBuilder, RenderContext>[] Segments { get; }
     private int LiteralLength { get; }
+    private ConcurrentDictionary<string, string> CategoryCache { get; } = new();
 
-    private LogTemplate(Action<StringBuilder, RenderContext>[] segments, int literalLength)
+    private LogTemplate(string template)
     {
-        Segments = segments;
-        LiteralLength = literalLength;
+        (Segments, LiteralLength) = ParseCore(template);
     }
 
-    public static LogTemplate Parse(string template) =>
-        Cache.GetOrAdd(template, static t =>
-        {
-            var (segments, literalLength) = ParseCore(t);
-            return new LogTemplate(segments, literalLength);
-        });
+    public static LogTemplate Parse(string template) => Cache.GetOrAdd(template, static t => new LogTemplate(t));
 
     public string Render(RenderContext ctx)
     {
         var estimatedLen = LiteralLength
-                            + ctx.Message.Length
-                            + ctx.Category.Length
-                            + DynamicOverhead;
+                           + ctx.Message.Length
+                           + ctx.Category.Length
+                           + DynamicOverhead;
 
         var sb = new StringBuilder(estimatedLen);
         foreach (var segment in Segments)
@@ -50,12 +45,11 @@ internal sealed partial class LogTemplate
         return sb.ToString();
     }
 
-    private static (Action<StringBuilder, RenderContext>[] Segments, int LiteralLength) ParseCore(string template)
+    private (Action<StringBuilder, RenderContext>[] Segments, int LiteralLength) ParseCore(string template)
     {
         var segments = new List<Action<StringBuilder, RenderContext>>();
         var literalLength = 0;
         var lastEnd = 0;
-        var categoryCache = new ConcurrentDictionary<string, string>();
 
         foreach (Match match in PlaceholderPattern.Matches(template))
         {
@@ -66,7 +60,7 @@ internal sealed partial class LogTemplate
                 segments.Add((sb, _) => sb.Append(literal));
             }
 
-            segments.Add(CreateSegment(match.Groups[1].Value, categoryCache));
+            segments.Add(CreateSegment(match.Groups[1].Value));
             lastEnd = match.Index + match.Length;
         }
 
@@ -80,7 +74,7 @@ internal sealed partial class LogTemplate
         return ([..segments], literalLength);
     }
 
-    private static Action<StringBuilder, RenderContext> CreateSegment(string key, ConcurrentDictionary<string, string> categoryCache) =>
+    private Action<StringBuilder, RenderContext> CreateSegment(string key) =>
         key switch
         {
             "category" => static (sb, ctx) => sb.Append(ctx.Category),
@@ -93,7 +87,7 @@ internal sealed partial class LogTemplate
             not null when key.StartsWith("level:", StringComparison.Ordinal)
                 => (sb, ctx) => sb.Append(FormatLogLevel(ctx.LogLevel, key[6..])),
             not null when key.StartsWith("category:", StringComparison.Ordinal)
-                => ParseCategorySegment(key[9..], categoryCache),
+                => ParseCategorySegment(key[9..]),
             _ => (sb, _) => sb.Append('{').Append(key).Append('}'),
         };
 
@@ -123,7 +117,7 @@ internal sealed partial class LogTemplate
             _ => level.ToString(),
         };
 
-    private static Action<StringBuilder, RenderContext> ParseCategorySegment(string format, ConcurrentDictionary<string, string> cache)
+    private Action<StringBuilder, RenderContext> ParseCategorySegment(string format)
     {
         if (format.Length < 2)
             return static (sb, ctx) => sb.Append(ctx.Category);
@@ -138,7 +132,7 @@ internal sealed partial class LogTemplate
         return align == 'l'
             ? (sb, ctx) =>
             {
-                var padded = cache.GetOrAdd(ctx.Category, cat =>
+                var padded = CategoryCache.GetOrAdd(ctx.Category, cat =>
                 {
                     var abbr = AbbreviateCategory(cat, maxLength);
                     return abbr.PadRight(maxLength);
@@ -147,7 +141,7 @@ internal sealed partial class LogTemplate
             }
             : (sb, ctx) =>
             {
-                var padded = cache.GetOrAdd(ctx.Category, cat =>
+                var padded = CategoryCache.GetOrAdd(ctx.Category, cat =>
                 {
                     var abbr = AbbreviateCategory(cat, maxLength);
                     return abbr.PadLeft(maxLength);
