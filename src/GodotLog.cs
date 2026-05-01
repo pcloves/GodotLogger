@@ -29,7 +29,7 @@ namespace GodotLogger;
 [PublicAPI]
 public static class GodotLog
 {
-    private static readonly Lock ConfigureLock = new();
+    private static readonly object ConfigureLock = new();
     private static Action<GodotLoggerConfiguration>? _configure;
 
     private static readonly Lazy<ILoggerFactory> LazyFactory = new(() => LoggerFactory.Create(builder =>

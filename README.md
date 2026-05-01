@@ -1,7 +1,7 @@
 # Gamedo.GodotLogger
 
 [![NuGet](https://img.shields.io/nuget/v/Gamedo.GodotLogger)](https://www.nuget.org/packages/Gamedo.GodotLogger)
-[![Target Framework](https://img.shields.io/badge/.NET-9.0-5C2D91)](https://dotnet.microsoft.com/)
+[![Target Framework](https://img.shields.io/badge/.NET-8.0-5C2D91)](https://dotnet.microsoft.com/)
 [![License](https://img.shields.io/github/license/gamedo/GodotLogger)](LICENSE)
 
 A [Microsoft.Extensions.Logging](https://www.nuget.org/packages/Microsoft.Extensions.Logging) provider that routes .NET
@@ -12,10 +12,12 @@ colored by log level, and dispatched to `GD.PrintRich`, `GD.PushWarning`, or `GD
 
 ## ✨ Features
 
-- Implements the standard `ILogger` / `ILoggerProvider` interfaces — drop-in for any .NET host or DI container
+- Implements the standard `ILogger` / `ILoggerProvider` interfaces — drop-in for Godot 4 projects using Microsoft.Extensions.Logging
 - Customizable **output template** with placeholders: `{timestamp}`, `{level}`, `{category}`, `{message}`, `{color}`,
   `{exception}`, `{newline}`
-- Per-log-level **color mapping** using Godot's named colors
+- Per-log-level **color mapping** using
+  Godot's [named colors](https://docs.godotengine.org/en/stable/tutorials/ui/bbcode_in_richtextlabel.html#named-colors)
+  or [hexadecimal color codes](https://docs.godotengine.org/en/stable/tutorials/ui/bbcode_in_richtextlabel.html#hexadecimal-color-codes)
 - **Hot-reload** support via `IOptionsMonitor` — configuration changes take effect at runtime
 - **Category auto-abbreviation & alignment** (log4j2-style `{category:l20}` / `{category:r10}`)
 - **Auto-discovered configuration** — environment variable `GODOT_LOGGER_CONFIG`, executable directory, or Godot project
@@ -24,7 +26,7 @@ colored by log level, and dispatched to `GD.PrintRich`, `GD.PushWarning`, or `GD
 - **Mode-specific minimum log levels** — `DebugMinLogLevel` (default `Debug`) and `ReleaseMinLogLevel` (default
   `Information`); filtered at the `ILogger.IsEnabled` level for zero formatting overhead
 - Template parsing is **cached** and render buffers are pre-sized — minimal allocation at runtime
-- Targets **.NET 9** with nullable annotations enabled
+- Targets **.NET 8** with nullable annotations enabled
 
 ---
 
@@ -103,7 +105,7 @@ GodotLog.Configure(cfg =>
     cfg.ReleaseMinLogLevel = LogLevel.Information;
     cfg.DebugOutputTemplate = "[{timestamp:HH:mm:ss}] [{level:u3}] [{category:l32}] {message}";
     cfg.ReleaseOutputTemplate = "[{timestamp:HH:mm:ss}] [{level:u3}] [{category:l32}] {message}";
-    cfg.Colors[LogLevel.Information] = "DodgerBlue";
+    cfg.Colors[LogLevel.Information] = nameof(Colors.SlateBlue);
 });
 ```
 
@@ -166,11 +168,11 @@ the **more restrictive of the two**.
 
 Category keys use **prefix matching** (longest prefix wins):
 
-| Category Key | Matches |
-|---|---|
-| `Default` | All categories (catch-all, lowest priority) |
-| `MyGame` | `MyGame` itself |
-| `MyGame.` | `MyGame.Core`, `MyGame.Player`, `MyGame.Player.Input`, etc. |
+| Category Key | Matches                                                     |
+|--------------|-------------------------------------------------------------|
+| `Default`    | All categories (catch-all, lowest priority)                 |
+| `MyGame`     | `MyGame` itself                                             |
+| `MyGame.`    | `MyGame.Core`, `MyGame.Player`, `MyGame.Player.Input`, etc. |
 
 So `"MyGame": "Debug"` makes the `MyGame` logger verbose, while `"MyGame.": "Warning"`
 keeps all its sub-categories quiet. No wildcard/glob syntax is needed.
