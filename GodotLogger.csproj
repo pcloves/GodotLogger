@@ -5,7 +5,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
 
-        <Version>1.0.0</Version>
+        <Version>1.0.1-dev1</Version>
         <Authors>gamedo</Authors>
         <AssemblyName>Gamedo.GodotLogger</AssemblyName>
         <PackageId>Gamedo.GodotLogger</PackageId>
