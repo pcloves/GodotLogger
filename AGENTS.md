@@ -18,3 +18,14 @@
 
 ## No Tests
 - The repo has no test project — do not look for or run test commands
+
+## PR Workflow
+- `master` branch is protected — all changes must go through PRs
+- Branch naming: `feature/*`, `fix/*`, `release/*`, `chore/*`
+- Use **squash merge** strategy
+- See `CONTRIBUTING.md` for full details
+
+## Release Process
+- Create `release/vX.Y.Z` branch → bump version (drop `-dev*` suffix) → PR → merge → tag `vX.Y.Z` → push
+- After release, bump to `X.Y.(Z+1)-dev1` via separate PR
+- CI publishes NuGet and creates GitHub Release on tag push
