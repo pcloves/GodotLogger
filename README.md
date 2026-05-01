@@ -73,9 +73,9 @@ root, and it is picked up automatically without any manual setup.
 By default, the output aligns categories to 16 characters (configurable via `{category:l<N>}` in the template):
 
 <pre>
-[2026-04-29 10:30:00.123] [<span style="color:aqua">INF</span>] [MyGame.Main      ] Hello from GodotLogger!
-[2026-04-29 10:30:01.456] [<span style="color:orange">WRN</span>] [MyGame.Main      ] Something looks suspicious
-[2026-04-29 10:30:02.789] [<span style="color:red">ERR</span>] [MyGame.Main      ] Something went wrong
+[2026-04-29 10:30:00.123] [<font color="aqua">INF</font>] [MyGame.Main      ] Hello from GodotLogger!
+[2026-04-29 10:30:01.456] [<font color="orange">WRN</font>] [MyGame.Main      ] Something looks suspicious
+[2026-04-29 10:30:02.789] [<font color="red">ERR</font>] [MyGame.Main      ] Something went wrong
 </pre>
 
 > **💡Tip:** When exporting your game, switch to Release mode to disable BBCode and Debugger overhead:
