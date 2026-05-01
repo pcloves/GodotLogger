@@ -2,7 +2,10 @@
 
 [![NuGet](https://img.shields.io/nuget/v/Gamedo.GodotLogger)](https://www.nuget.org/packages/Gamedo.GodotLogger)
 [![Target Framework](https://img.shields.io/badge/.NET-8.0-5C2D91)](https://dotnet.microsoft.com/)
-[![License](https://img.shields.io/github/license/gamedo/GodotLogger)](LICENSE)
+[![License](https://img.shields.io/github/license/pcloves/GodotLogger)](LICENSE)
+
+[![English](https://img.shields.io/badge/lang-English-blue.svg)](README.md)
+[![中文](https://img.shields.io/badge/lang-中文-red.svg)](README.zh-CN.md)
 
 A [Microsoft.Extensions.Logging](https://www.nuget.org/packages/Microsoft.Extensions.Logging) provider that routes .NET
 structured logs through Godot 4's built-in output system. Every message is rendered with a customizable template,
@@ -91,7 +94,12 @@ By default, the output aligns categories to 16 characters (configurable via `{ca
 
 ## 🎬 Demo
 
+<details>
+<summary>Click to show demo</summary>
+
 ![Godot Editor Demo](https://raw.githubusercontent.com/pcloves/GodotLogger/master/assets/godot-editor-demo.gif)
+
+</details>
 
 ---
 
