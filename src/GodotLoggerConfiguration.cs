@@ -27,6 +27,20 @@ public class GodotLoggerConfiguration
     public LoggerMode Mode { get; set; } = LoggerMode.Debug;
 
     /// <summary>
+    ///     Gets or sets the minimum log level for <see cref="LoggerMode.Debug" />.
+    ///     Defaults to <see cref="LogLevel.Debug" />. Log entries below this level are silently dropped.
+    /// </summary>
+    [JsonInclude]
+    public LogLevel DebugMinLogLevel { get; set; } = LogLevel.Debug;
+
+    /// <summary>
+    ///     Gets or sets the minimum log level for <see cref="LoggerMode.Release" />.
+    ///     Defaults to <see cref="LogLevel.Information" />. Log entries below this level are silently dropped.
+    /// </summary>
+    [JsonInclude]
+    public LogLevel ReleaseMinLogLevel { get; set; } = LogLevel.Information;
+
+    /// <summary>
     ///     Gets or sets the mapping of log levels to Godot color names used in BBCode output.
     /// </summary>
     [JsonInclude]

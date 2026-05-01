@@ -72,12 +72,21 @@ public class GodotLogger(string name, Func<GodotLoggerConfiguration> configProvi
     }
 
     /// <summary>
-    ///     Checks whether the given <see cref="LogLevel" /> is enabled. All levels except <see cref="LogLevel.None" />
-    ///     are enabled.
+    ///     Checks whether the given <see cref="LogLevel" /> is enabled.
+    ///     In <see cref="LoggerMode.Debug" /> mode, the minimum level is <see cref="GodotLoggerConfiguration.DebugMinLogLevel" />.
+    ///     In <see cref="LoggerMode.Release" /> mode, the minimum level is <see cref="GodotLoggerConfiguration.ReleaseMinLogLevel" />.
     /// </summary>
     /// <param name="logLevel">The log level to check.</param>
     /// <returns><see langword="true" /> if logging is enabled for the specified level; otherwise, <see langword="false" />.</returns>
-    public bool IsEnabled(LogLevel logLevel) => logLevel is not LogLevel.None;
+    public bool IsEnabled(LogLevel logLevel)
+    {
+        if (logLevel == LogLevel.None)
+            return false;
+
+        var config = configProvider();
+        var minLevel = config.Mode == LoggerMode.Debug ? config.DebugMinLogLevel : config.ReleaseMinLogLevel;
+        return logLevel >= minLevel;
+    }
 
     /// <summary>
     ///     Begins a logical operation scope. Not currently implemented.

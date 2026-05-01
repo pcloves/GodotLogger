@@ -21,6 +21,8 @@ colored by log level, and dispatched to `GD.PrintRich`, `GD.PushWarning`, or `GD
 - **Auto-discovered configuration** — environment variable `GODOT_LOGGER_CONFIG`, executable directory, or Godot project
   root (`res://`)
 - **Multiple configuration sources**: auto-discovered `appsettings.json` or code delegate
+- **Mode-specific minimum log levels** — `DebugMinLogLevel` (default `Debug`) and `ReleaseMinLogLevel` (default
+  `Information`); filtered at the `ILogger.IsEnabled` level for zero formatting overhead
 - Template parsing is **cached** and render buffers are pre-sized — minimal allocation at runtime
 - Targets **.NET 9** with nullable annotations enabled
 
@@ -64,9 +66,9 @@ public partial class Main : Node
 If you prefer a custom category name, use `GodotLog.CreateLogger("MyCategory")` instead.
 
 `GodotLog` auto-discovers `appsettings.json` — just drop the file in your project
-root and it is picked up automatically without any manual setup.
+root, and it is picked up automatically without any manual setup.
 
-By default the output aligns categories to 16 characters (configurable via `{category:l<N>}` in the template):
+By default, the output aligns categories to 16 characters (configurable via `{category:l<N>}` in the template):
 
 <pre>
 [2026-04-29 10:30:00.123] [<span style="color:aqua">INF</span>] [MyGame.Main      ] Hello from GodotLogger!
@@ -74,7 +76,18 @@ By default the output aligns categories to 16 characters (configurable via `{cat
 [2026-04-29 10:30:02.789] [<span style="color:red">ERR</span>] [MyGame.Main      ] Something went wrong
 </pre>
 
-
+> **💡Tip:** When exporting your game, switch to Release mode to disable BBCode and Debugger overhead:
+>
+> ```csharp
+> GodotLog.Configure(config =>
+> {
+>     if (OS.HasFeature("release"))
+>         config.Mode = LoggerMode.Release;
+> });
+> ```
+>
+> Debug mode outputs all levels from `Debug` upward; Release mode restricts to `Information` and above.
+> Both are configurable via `DebugMinLogLevel` / `ReleaseMinLogLevel`.
 
 ---
 
@@ -86,6 +99,8 @@ By default the output aligns categories to 16 characters (configurable via `{cat
 GodotLog.Configure(cfg =>
 {
     cfg.Mode = LoggerMode.Debug;
+    cfg.DebugMinLogLevel = LogLevel.Debug;
+    cfg.ReleaseMinLogLevel = LogLevel.Information;
     cfg.DebugOutputTemplate = "[{timestamp:HH:mm:ss}] [{level:u3}] [{category:l32}] {message}";
     cfg.ReleaseOutputTemplate = "[{timestamp:HH:mm:ss}] [{level:u3}] [{category:l32}] {message}";
     cfg.Colors[LogLevel.Information] = "DodgerBlue";
@@ -107,6 +122,8 @@ If no file is found, the logger uses sensible defaults.
   "Logging": {
     "GodotLogger": {
       "Mode": "Debug",
+      "DebugMinLogLevel": "Debug",
+      "ReleaseMinLogLevel": "Information",
       "DebugOutputTemplate": "[{timestamp:yyyy-MM-dd HH:mm:ss.fff}] [color={color}][{level:u3}][/color] [{category:l28}] {message}",
       "ReleaseOutputTemplate": "[{timestamp:yyyy-MM-dd HH:mm:ss.fff}] [{level:u3}] [{category:l28}] {message}",
       "Colors": {
@@ -124,6 +141,68 @@ If no file is found, the logger uses sensible defaults.
 
 `AddGodotLogger()` reads the `"GodotLogger"` section from `Logging` by convention and enables hot-reload
 via file watcher.
+
+### Per-category log levels via `Logging:LogLevel`
+
+The standard .NET logging pipeline provides category-level filtering through the `Logging:LogLevel` section.
+This works **independently** of `DebugMinLogLevel` / `ReleaseMinLogLevel` — the effective minimum level is
+the **more restrictive of the two**.
+
+```json
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Warning",
+      "MyGame": "Debug",
+      "MyGame.": "Warning"
+    },
+    "GodotLogger": {
+      "DebugMinLogLevel": "Trace",
+      "ReleaseMinLogLevel": "Information"
+    }
+  }
+}
+```
+
+Category keys use **prefix matching** (longest prefix wins):
+
+| Category Key | Matches |
+|---|---|
+| `Default` | All categories (catch-all, lowest priority) |
+| `MyGame` | `MyGame` itself |
+| `MyGame.` | `MyGame.Core`, `MyGame.Player`, `MyGame.Player.Input`, etc. |
+
+So `"MyGame": "Debug"` makes the `MyGame` logger verbose, while `"MyGame.": "Warning"`
+keeps all its sub-categories quiet. No wildcard/glob syntax is needed.
+
+Relationship between the two filtering layers:
+
+<table>
+<tr>
+<th>Scenario</th>
+<th><code>Logging:LogLevel</code> result</th>
+<th>Mode min level</th>
+<th>Effective</th>
+</tr>
+<tr>
+<td>Debug mode, no category filter</td>
+<td>—</td>
+<td><code>Debug</code></td>
+<td><code>Debug</code></td>
+</tr>
+<tr>
+<td>Release mode, <code>"MyGame": "Debug"</code></td>
+<td><code>Debug</code></td>
+<td><code>Information</code></td>
+<td><code>Information</code> (mode wins)</td>
+</tr>
+<tr>
+<td>Debug mode, <code>"MyGame": "Warning"</code></td>
+<td><code>Warning</code></td>
+<td><code>Debug</code></td>
+<td><code>Warning</code> (category wins)</td>
+</tr>
+</table>
 
 ---
 
@@ -158,27 +237,28 @@ The template is a string that can contain any literal text plus the following pl
 
 GodotLogger supports two modes controlled by the `LoggerMode` enum:
 
-| Mode              | Output                          | Exception handling       | Debugger                                     |
-|-------------------|---------------------------------|--------------------------|----------------------------------------------|
-| `Debug` (default) | `GD.PrintRich` (colored BBCode) | `GD.PrintErr` separately | Warning+ → `GD.PushWarning` / `GD.PushError` |
-| `Release`         | `GD.Print` (plain text)         | `GD.PrintErr` separately | None                                         |
+| Mode              | Output                          | Exception handling       | Debugger                                     | Default Min Level |
+|-------------------|---------------------------------|--------------------------|----------------------------------------------|-------------------|
+| `Debug` (default) | `GD.PrintRich` (colored BBCode) | `GD.PrintErr` separately | Warning+ → `GD.PushWarning` / `GD.PushError` | `Debug`           |
+| `Release`         | `GD.Print` (plain text)         | `GD.PrintErr` separately | None                                         | `Information`     |
 
 ---
 
 ## 🎨 Log Level Mapping
 
-| Log Level     | Debug output                      | Release output | Default Color |
-|---------------|-----------------------------------|----------------|---------------|
-| `Trace`       | `GD.PrintRich`                    | `GD.Print`     | Gray          |
-| `Debug`       | `GD.PrintRich`                    | `GD.Print`     | LawnGreen     |
-| `Information` | `GD.PrintRich`                    | `GD.Print`     | Aqua          |
-| `Warning`     | `GD.PrintRich` + `GD.PushWarning` | `GD.Print`     | Orange        |
-| `Error`       | `GD.PrintRich` + `GD.PushError`   | `GD.Print`     | Red           |
-| `Critical`    | `GD.PrintRich` + `GD.PushError`   | `GD.Print`     | DeepPink      |
+| Log Level     | Debug output                      | Release output | Default Color | Enabled by Default |
+|---------------|-----------------------------------|----------------|---------------|--------------------|
+| `Trace`       | `GD.PrintRich`                    | `GD.Print`     | Gray          | Debug only         |
+| `Debug`       | `GD.PrintRich`                    | `GD.Print`     | LawnGreen     | Debug only         |
+| `Information` | `GD.PrintRich`                    | `GD.Print`     | Aqua          | Both               |
+| `Warning`     | `GD.PrintRich` + `GD.PushWarning` | `GD.Print`     | Orange        | Both               |
+| `Error`       | `GD.PrintRich` + `GD.PushError`   | `GD.Print`     | Red           | Both               |
+| `Critical`    | `GD.PrintRich` + `GD.PushError`   | `GD.Print`     | DeepPink      | Both               |
 
 In any mode, if the log entry carries an exception, it is additionally printed via `GD.PrintErr`.
 
 You can override any color via the `Colors` dictionary in configuration.
+You can adjust these defaults via `DebugMinLogLevel` and `ReleaseMinLogLevel`.
 
 ---
 
@@ -188,9 +268,11 @@ You can override any color via the `Colors` dictionary in configuration.
 src/
 ├── GodotLog.cs                     # Static API — auto-discovers configuration, no manual setup needed
 ├── GodotLogger.cs                  # ILogger implementation
-├── GodotLoggerConfiguration.cs     # Options class with colors, template
+├── GodotLoggerConfiguration.cs     # Options class with mode, colors, templates, min log levels
 ├── GodotLoggerProvider.cs          # ILoggerProvider (singleton, hot-reload aware)
+├── LoggerMode.cs                   # LoggerMode enum (Debug / Release)
 ├── LogTemplate.cs                  # Template parser + renderer with caching
+├── DeferredLogger.cs               # Lazy logger proxy (defers factory creation)
 └── Extensions/
     └── LoggingBuilderExtensions.cs # AddGodotLogger() extension methods
 ```
