@@ -72,7 +72,6 @@ public static class LoggingBuilderExtensions
                 .AddJsonFile(configPath, optional: false, reloadOnChange: true)
                 .Build();
 
-            builder.Services.AddSingleton(configuration);
             builder.AddConfiguration(configuration.GetSection("Logging"));
         }
         else
