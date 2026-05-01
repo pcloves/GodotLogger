@@ -55,6 +55,7 @@ internal sealed partial class LogTemplate
         var segments = new List<Action<StringBuilder, RenderContext>>();
         var literalLength = 0;
         var lastEnd = 0;
+        var categoryCache = new ConcurrentDictionary<string, string>();
 
         foreach (Match match in PlaceholderPattern.Matches(template))
         {
@@ -65,7 +66,7 @@ internal sealed partial class LogTemplate
                 segments.Add((sb, _) => sb.Append(literal));
             }
 
-            segments.Add(CreateSegment(match.Groups[1].Value));
+            segments.Add(CreateSegment(match.Groups[1].Value, categoryCache));
             lastEnd = match.Index + match.Length;
         }
 
@@ -79,7 +80,7 @@ internal sealed partial class LogTemplate
         return ([..segments], literalLength);
     }
 
-    private static Action<StringBuilder, RenderContext> CreateSegment(string key) =>
+    private static Action<StringBuilder, RenderContext> CreateSegment(string key, ConcurrentDictionary<string, string> categoryCache) =>
         key switch
         {
             "category" => static (sb, ctx) => sb.Append(ctx.Category),
@@ -92,7 +93,7 @@ internal sealed partial class LogTemplate
             not null when key.StartsWith("level:", StringComparison.Ordinal)
                 => (sb, ctx) => sb.Append(FormatLogLevel(ctx.LogLevel, key[6..])),
             not null when key.StartsWith("category:", StringComparison.Ordinal)
-                => ParseCategorySegment(key[9..]),
+                => ParseCategorySegment(key[9..], categoryCache),
             _ => (sb, _) => sb.Append('{').Append(key).Append('}'),
         };
 
@@ -122,7 +123,7 @@ internal sealed partial class LogTemplate
             _ => level.ToString(),
         };
 
-    private static Action<StringBuilder, RenderContext> ParseCategorySegment(string format)
+    private static Action<StringBuilder, RenderContext> ParseCategorySegment(string format, ConcurrentDictionary<string, string> cache)
     {
         if (format.Length < 2)
             return static (sb, ctx) => sb.Append(ctx.Category);
@@ -137,13 +138,21 @@ internal sealed partial class LogTemplate
         return align == 'l'
             ? (sb, ctx) =>
             {
-                var result = AbbreviateCategory(ctx.Category, maxLength);
-                sb.Append(result.PadRight(maxLength));
+                var padded = cache.GetOrAdd(ctx.Category, cat =>
+                {
+                    var abbr = AbbreviateCategory(cat, maxLength);
+                    return abbr.PadRight(maxLength);
+                });
+                sb.Append(padded);
             }
             : (sb, ctx) =>
             {
-                var result = AbbreviateCategory(ctx.Category, maxLength);
-                sb.Append(result.PadLeft(maxLength));
+                var padded = cache.GetOrAdd(ctx.Category, cat =>
+                {
+                    var abbr = AbbreviateCategory(cat, maxLength);
+                    return abbr.PadLeft(maxLength);
+                });
+                sb.Append(padded);
             };
     }
 
