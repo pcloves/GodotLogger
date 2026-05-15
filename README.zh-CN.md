@@ -149,12 +149,19 @@ GodotLog.Configure(cfg =>
 }
 ```
 
-`AddGodotLogger()` 按约定从 `Logging` 中读取 `"GodotLogger"` 配置节，并通过文件监视器启用热重载。
+`AddGodotLogger()` 按约定从 `Logging` 中读取 `"GodotLogger"` ，并通过文件监视器启用热重载。
 
 ### 通过 `Logging:LogLevel` 设置按类别过滤日志级别
 
-标准的 .NET 日志管道通过 `Logging:LogLevel` 配置节提供类别级过滤。
-这与 `DebugMinLogLevel` / `ReleaseMinLogLevel` **相互独立** — 实际的最低级别取两者中**更严格的那个**。
+GodotLogger 有自己的最低日志级别机制 — Debug 模式使用 `DebugMinLogLevel`，Release 模式使用
+`ReleaseMinLogLevel`。.NET `Logging:LogLevel:Default` 属于**额外的**过滤机制。
+
+如果**未显式配置** `Logging:LogLevel:Default`，且 .NET 最低日志级别仍是框架默认的 `Information`，
+GodotLogger 会将其设置为`Trace`，让当前模式下的最低级别（`DebugMinLogLevel` 或
+`ReleaseMinLogLevel`）作为唯一的过滤器。因此只需配置 `DebugMinLogLevel: "Debug"`
+即可生效，无需再配置 .NET 的默认日志级别。
+
+如果**已显式配置** `Logging:LogLevel:Default`，它会作为额外限制条件 — 最终日志级别取决于两者中**更严格的那个**。
 
 ```json
 {
@@ -174,11 +181,11 @@ GodotLog.Configure(cfg =>
 
 类别键使用**前缀匹配**（最长前缀优先）：
 
-| 类别键       | 匹配范围                                                     |
-|--------------|--------------------------------------------------------------|
-| `Default`    | 所有类别（兜底，最低优先级）                                  |
-| `MyGame`     | `MyGame` 本身                                                |
-| `MyGame.`    | `MyGame.Core`、`MyGame.Player`、`MyGame.Player.Input` 等     |
+| 类别键       | 匹配范围                                                  |
+|-----------|-------------------------------------------------------|
+| `Default` | 所有类别（兜底，最低优先级）                                        |
+| `MyGame`  | `MyGame` 本身                                           |
+| `MyGame.` | `MyGame.Core`、`MyGame.Player`、`MyGame.Player.Input` 等 |
 
 因此 `"MyGame": "Debug"` 让 `MyGame` 记录器输出详细日志，而 `"MyGame.": "Warning"`
 则让它的所有子类别保持安静。无需通配符/glob 语法。
@@ -188,27 +195,33 @@ GodotLog.Configure(cfg =>
 <table>
 <tr>
 <th>场景</th>
-<th><code>Logging:LogLevel</code> 结果</th>
+<th><code>Logging:LogLevel:Default</code></th>
 <th>模式最低级别</th>
 <th>实际级别</th>
 </tr>
 <tr>
-<td>Debug 模式，无类别过滤</td>
-<td>—</td>
+<td>Debug 模式，未配置 <code>Logging:LogLevel:Default</code></td>
+<td>（回退到 <code>DebugMinLogLevel</code>）</td>
 <td><code>Debug</code></td>
 <td><code>Debug</code></td>
 </tr>
 <tr>
-<td>Release 模式，<code>"MyGame": "Debug"</code></td>
-<td><code>Debug</code></td>
-<td><code>Information</code></td>
-<td><code>Information</code>（模式优先）</td>
-</tr>
-<tr>
-<td>Debug 模式，<code>"MyGame": "Warning"</code></td>
+<td>Debug 模式，<code>"Default": "Warning"</code></td>
 <td><code>Warning</code></td>
 <td><code>Debug</code></td>
-<td><code>Warning</code>（类别优先）</td>
+<td><code>Warning</code>（额外过滤层优先）</td>
+</tr>
+<tr>
+<td>Release 模式，未配置 <code>Logging:LogLevel:Default</code></td>
+<td>（回退到 <code>ReleaseMinLogLevel</code>）</td>
+<td><code>Information</code></td>
+<td><code>Information</code></td>
+</tr>
+<tr>
+<td>Release 模式，<code>"Default": "Debug"</code></td>
+<td><code>Debug</code></td>
+<td><code>Information</code></td>
+<td><code>Information</code>（模式最低级别优先）</td>
 </tr>
 </table>
 
@@ -218,20 +231,20 @@ GodotLog.Configure(cfg =>
 
 模板是一个字符串，可以包含任意文本及以下占位符：
 
-| 占位符               | 说明                                                                                 |
-|----------------------|--------------------------------------------------------------------------------------|
-| `{timestamp}`        | 当前时间（`yyyy-MM-dd HH:mm:ss.fff`）                                                |
-| `{timestamp:format}` | 当前时间，使用自定义的 `DateTime.ToString` 格式                                      |
-| `{level}`            | 完整日志级别名称，如 `Information`                                                    |
-| `{level:u3}`         | 大写的 3 字母代码：`INF`、`WRN`、`ERR`                                              |
-| `{level:l3}`         | 小写的 3 字母代码：`inf`、`wrn`、`err`                                              |
-| `{category}`         | 日志记录器类别名称，原样输出                                                          |
-| `{category:l<N>`}    | 左对齐，最大 `N` 个字符；过长时按 log4j2 规则缩写，过短时用空格填充                   |
-| `{category:r<N>`}    | 右对齐，最大 `N` 个字符；缩写和填充规则同上                                           |
-| `{message}`          | 格式化后的日志消息                                                                    |
-| `{exception}`        | 异常的 `ToString()` 输出，或空                                                        |
-| `{color}`            | 当前日志级别的 Godot 颜色名称                                                        |
-| `{newline}`          | `Environment.NewLine`                                                                |
+| 占位符                  | 说明                                       |
+|----------------------|------------------------------------------|
+| `{timestamp}`        | 当前时间（`yyyy-MM-dd HH:mm:ss.fff`）          |
+| `{timestamp:format}` | 当前时间，使用自定义的 `DateTime.ToString` 格式       |
+| `{level}`            | 完整日志级别名称，如 `Information`                 |
+| `{level:u3}`         | 大写的 3 字母代码：`INF`、`WRN`、`ERR`             |
+| `{level:l3}`         | 小写的 3 字母代码：`inf`、`wrn`、`err`             |
+| `{category}`         | 日志记录器类别名称，原样输出                           |
+| `{category:l<N>`}    | 左对齐，最大 `N` 个字符；过长时按 log4j2 规则缩写，过短时用空格填充 |
+| `{category:r<N>`}    | 右对齐，最大 `N` 个字符；缩写和填充规则同上                 |
+| `{message}`          | 格式化后的日志消息                                |
+| `{exception}`        | 异常的 `ToString()` 输出，或空                   |
+| `{color}`            | 当前日志级别的 Godot 颜色名称                       |
+| `{newline}`          | `Environment.NewLine`                    |
 
 > **注意：**
 >
@@ -245,23 +258,23 @@ GodotLog.Configure(cfg =>
 
 GodotLogger 支持两种模式，由 `LoggerMode` 枚举控制：
 
-| 模式               | 输出方式                        | 异常处理                | Debugger                                     | 默认最低级别    |
-|--------------------|--------------------------------|-------------------------|----------------------------------------------|-----------------|
-| `Debug`（默认）    | `GD.PrintRich`（彩色 BBCode）   | 额外 `GD.PrintErr`      | Warning+ → `GD.PushWarning` / `GD.PushError` | `Debug`         |
-| `Release`          | `GD.Print`（纯文本）            | 额外 `GD.PrintErr`      | 无                                           | `Information`   |
+| 模式          | 输出方式                      | 异常处理             | Debugger                                     | 默认最低级别        |
+|-------------|---------------------------|------------------|----------------------------------------------|---------------|
+| `Debug`（默认） | `GD.PrintRich`（彩色 BBCode） | 额外 `GD.PrintErr` | Warning+ → `GD.PushWarning` / `GD.PushError` | `Debug`       |
+| `Release`   | `GD.Print`（纯文本）           | 额外 `GD.PrintErr` | 无                                            | `Information` |
 
 ---
 
 ## 🎨 日志级别映射
 
-| 日志级别      | Debug 输出                        | Release 输出 | 默认颜色   | 默认启用          |
-|---------------|-----------------------------------|--------------|------------|-------------------|
-| `Trace`       | `GD.PrintRich`                    | `GD.Print`   | Gray       | 仅 Debug          |
-| `Debug`       | `GD.PrintRich`                    | `GD.Print`   | LawnGreen  | 仅 Debug          |
-| `Information` | `GD.PrintRich`                    | `GD.Print`   | Aqua       | 两种模式          |
-| `Warning`     | `GD.PrintRich` + `GD.PushWarning` | `GD.Print`   | Orange     | 两种模式          |
-| `Error`       | `GD.PrintRich` + `GD.PushError`   | `GD.Print`   | Red        | 两种模式          |
-| `Critical`    | `GD.PrintRich` + `GD.PushError`   | `GD.Print`   | DeepPink   | 两种模式          |
+| 日志级别          | Debug 输出                          | Release 输出 | 默认颜色      | 默认启用    |
+|---------------|-----------------------------------|------------|-----------|---------|
+| `Trace`       | `GD.PrintRich`                    | `GD.Print` | Gray      | 仅 Debug |
+| `Debug`       | `GD.PrintRich`                    | `GD.Print` | LawnGreen | 仅 Debug |
+| `Information` | `GD.PrintRich`                    | `GD.Print` | Aqua      | 两种模式    |
+| `Warning`     | `GD.PrintRich` + `GD.PushWarning` | `GD.Print` | Orange    | 两种模式    |
+| `Error`       | `GD.PrintRich` + `GD.PushError`   | `GD.Print` | Red       | 两种模式    |
+| `Critical`    | `GD.PrintRich` + `GD.PushError`   | `GD.Print` | DeepPink  | 两种模式    |
 
 在任何模式下，如果日志条目携带异常，还会额外通过 `GD.PrintErr` 输出。
 

@@ -79,6 +79,14 @@ public static class LoggingBuilderExtensions
             builder.AddConfiguration();
         }
 
+        builder.Services.PostConfigure<LoggerFilterOptions>(options =>
+        {
+            if (options.MinLevel == LogLevel.Information && !HasExplicitDefaultLogLevel(options))
+            {
+                options.MinLevel = LogLevel.Trace;
+            }
+        });
+
         builder.Services.TryAddEnumerable(ServiceDescriptor.Singleton<ILoggerProvider, GodotLoggerProvider>());
         LoggerProviderOptions.RegisterProviderOptions<GodotLoggerConfiguration, GodotLoggerProvider>(builder.Services);
 
@@ -99,4 +107,15 @@ public static class LoggingBuilderExtensions
 
         return builder;
     }
+
+    /// <summary>
+    ///     Determines whether an explicit default log level rule has been configured.
+    /// </summary>
+    /// <param name="options">The logger filter options to inspect.</param>
+    /// <returns><see langword="true" /> if a default log level rule is configured; otherwise, <see langword="false" />.</returns>
+    private static bool HasExplicitDefaultLogLevel(LoggerFilterOptions options) =>
+        options.Rules.Any(rule =>
+            rule.ProviderName is null &&
+            rule.CategoryName is null &&
+            rule is { LogLevel: not null, Filter: null });
 }
