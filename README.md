@@ -90,6 +90,8 @@ By default, the output aligns categories to 16 characters (configurable via `{ca
 > Debug mode outputs all levels from `Debug` upward; Release mode restricts to `Information` and above.
 > Both are configurable via `DebugMinLogLevel` / `ReleaseMinLogLevel`.
 
+> **💡Tip:** Godot has built-in file logging support! Enable it via **Project → Project Settings → debug/file_logging/enable_file_logging** (toggle to On). You can customize the log path via `debug/file_logging/log_path` (e.g., `user://logs/godot.log`). Since GodotLogger uses `GD.Print*` under the hood, your logs will automatically be saved to file — no extra code needed.
+
 ---
 
 ## 🎬 Demo
