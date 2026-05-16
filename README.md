@@ -158,9 +158,18 @@ via file watcher.
 
 ### Per-category log levels via `Logging:LogLevel`
 
-The standard .NET logging pipeline provides category-level filtering through the `Logging:LogLevel` section.
-This works **independently** of `DebugMinLogLevel` / `ReleaseMinLogLevel` — the effective minimum level is
-the **more restrictive of the two**.
+GodotLogger has its own minimum log level mechanism — `DebugMinLogLevel` for Debug mode and
+`ReleaseMinLogLevel` for Release mode. The standard .NET `Logging:LogLevel:Default` serves as an
+**additional filter layer** on top of that.
+
+If `Logging:LogLevel:Default` is **not explicitly configured** and the .NET minimum level is still the
+framework default `Information`, GodotLogger opens the framework-level gate so the current mode's min
+level (`DebugMinLogLevel` or `ReleaseMinLogLevel`) controls output as the fallback filter. This makes
+setting just `DebugMinLogLevel: "Debug"` work as expected without configuring the .NET logging section
+separately.
+
+If `Logging:LogLevel:Default` **is explicitly configured**, it acts as an additional restriction — the
+effective level is always the **more restrictive** of the two.
 
 ```json
 {
@@ -194,27 +203,33 @@ Relationship between the two filtering layers:
 <table>
 <tr>
 <th>Scenario</th>
-<th><code>Logging:LogLevel</code> result</th>
+<th><code>Logging:LogLevel:Default</code></th>
 <th>Mode min level</th>
 <th>Effective</th>
 </tr>
 <tr>
-<td>Debug mode, no category filter</td>
-<td>—</td>
+<td>Debug mode, no <code>Logging:LogLevel:Default</code> configured</td>
+<td>(falls back to <code>DebugMinLogLevel</code>)</td>
 <td><code>Debug</code></td>
 <td><code>Debug</code></td>
 </tr>
 <tr>
-<td>Release mode, <code>"MyGame": "Debug"</code></td>
-<td><code>Debug</code></td>
-<td><code>Information</code></td>
-<td><code>Information</code> (mode wins)</td>
-</tr>
-<tr>
-<td>Debug mode, <code>"MyGame": "Warning"</code></td>
+<td>Debug mode, <code>"Default": "Warning"</code></td>
 <td><code>Warning</code></td>
 <td><code>Debug</code></td>
-<td><code>Warning</code> (category wins)</td>
+<td><code>Warning</code> (additional filter wins)</td>
+</tr>
+<tr>
+<td>Release mode, no <code>Logging:LogLevel:Default</code> configured</td>
+<td>(falls back to <code>ReleaseMinLogLevel</code>)</td>
+<td><code>Information</code></td>
+<td><code>Information</code></td>
+</tr>
+<tr>
+<td>Release mode, <code>"Default": "Debug"</code></td>
+<td><code>Debug</code></td>
+<td><code>Information</code></td>
+<td><code>Information</code> (mode min level wins)</td>
 </tr>
 </table>
 
