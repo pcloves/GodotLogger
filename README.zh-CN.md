@@ -88,6 +88,8 @@ public partial class Main : Node
 > Debug 模式输出从 `Debug` 及以上的所有级别；Release 模式限制为 `Information` 及以上。
 > 两者均可通过 `DebugMinLogLevel` / `ReleaseMinLogLevel` 配置。
 
+> **💡提示：** Godot 原生支持文件日志！通过 **Project → Project Settings → debug/file_logging/enable_file_logging** 启用（切换为 On）。可通过 `debug/file_logging/log_path` 自定义日志路径（例如 `user://logs/godot.log`）。由于 GodotLogger 底层使用 `GD.Print*`，启用后日志会自动保存到文件 — 无需额外代码。
+
 ---
 
 ## 🎬 演示
