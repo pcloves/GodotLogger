@@ -5,7 +5,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
 
-        <Version>1.0.1-dev1</Version>
+        <Version>1.1.0-dev1</Version>
         <Authors>gamedo</Authors>
         <AssemblyName>Gamedo.GodotLogger</AssemblyName>
         <PackageId>Gamedo.GodotLogger</PackageId>
@@ -34,6 +34,10 @@
         <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.7"/>
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
     </ItemGroup>
+
+    <ProjectReference Include="src\Generator\GodotLogger.Generator.csproj"
+                      ReferenceOutputAssembly="false"
+                      OutputItemType="Analyzer" />
 
     <ItemGroup>
         <None Include="..\..\README.md" Pack="true" PackagePath="\"/>

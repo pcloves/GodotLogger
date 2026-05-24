@@ -2,6 +2,8 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GodotLogger", "src\GodotLogger\GodotLogger.csproj", "{E1825C97-1D49-4328-A43E-0E41CBAAB07C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GodotLogger.Generator", "GodotLogger.Generator\GodotLogger.Generator.csproj", "{A3D4F5B6-7C8E-9A0B-1D2E-3F4A5B6C7D8E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -12,5 +14,9 @@ Global
 		{E1825C97-1D49-4328-A43E-0E41CBAAB07C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E1825C97-1D49-4328-A43E-0E41CBAAB07C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E1825C97-1D49-4328-A43E-0E41CBAAB07C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A3D4F5B6-7C8E-9A0B-1D2E-3F4A5B6C7D8E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A3D4F5B6-7C8E-9A0B-1D2E-3F4A5B6C7D8E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A3D4F5B6-7C8E-9A0B-1D2E-3F4A5B6C7D8E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A3D4F5B6-7C8E-9A0B-1D2E-3F4A5B6C7D8E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
