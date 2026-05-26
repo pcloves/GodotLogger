@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GodotLogger", "GodotLogger.csproj", "{E1825C97-1D49-4328-A43E-0E41CBAAB07C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GodotLogger", "src\GodotLogger\GodotLogger.csproj", "{E1825C97-1D49-4328-A43E-0E41CBAAB07C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -289,15 +289,17 @@ GodotLogger 支持两种模式，由 `LoggerMode` 枚举控制：
 
 ```
 src/
-├── GodotLog.cs                     # 静态 API — 自动发现配置，无需手动设置
-├── GodotLogger.cs                  # ILogger 实现
-├── GodotLoggerConfiguration.cs     # 选项类 — 模式、颜色、模板、最低日志级别
-├── GodotLoggerProvider.cs          # ILoggerProvider（单例，支持热重载）
-├── LoggerMode.cs                   # LoggerMode 枚举（Debug / Release）
-├── LogTemplate.cs                  # 模板解析器 + 渲染器（带缓存）
-├── DeferredLogger.cs               # 延迟记录器代理（延迟工厂创建）
-└── Extensions/
-    └── LoggingBuilderExtensions.cs # AddGodotLogger() 扩展方法
+└── GodotLogger/
+    ├── GodotLogger.csproj
+    ├── GodotLog.cs                     # 静态 API — 自动发现配置，无需手动设置
+    ├── GodotLogger.cs                  # ILogger 实现
+    ├── GodotLoggerConfiguration.cs     # 选项类 — 模式、颜色、模板、最低日志级别
+    ├── GodotLoggerProvider.cs          # ILoggerProvider（单例，支持热重载）
+    ├── LoggerMode.cs                   # LoggerMode 枚举（Debug / Release）
+    ├── LogTemplate.cs                  # 模板解析器 + 渲染器（带缓存）
+    ├── DeferredLogger.cs               # 延迟记录器代理（延迟工厂创建）
+    └── Extensions/
+        └── LoggingBuilderExtensions.cs # AddGodotLogger() 扩展方法
 ```
 
 ---

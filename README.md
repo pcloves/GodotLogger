@@ -295,15 +295,17 @@ You can adjust these defaults via `DebugMinLogLevel` and `ReleaseMinLogLevel`.
 
 ```
 src/
-├── GodotLog.cs                     # Static API — auto-discovers configuration, no manual setup needed
-├── GodotLogger.cs                  # ILogger implementation
-├── GodotLoggerConfiguration.cs     # Options class with mode, colors, templates, min log levels
-├── GodotLoggerProvider.cs          # ILoggerProvider (singleton, hot-reload aware)
-├── LoggerMode.cs                   # LoggerMode enum (Debug / Release)
-├── LogTemplate.cs                  # Template parser + renderer with caching
-├── DeferredLogger.cs               # Lazy logger proxy (defers factory creation)
-└── Extensions/
-    └── LoggingBuilderExtensions.cs # AddGodotLogger() extension methods
+└── GodotLogger/
+    ├── GodotLogger.csproj
+    ├── GodotLog.cs                     # Static API — auto-discovers configuration, no manual setup needed
+    ├── GodotLogger.cs                  # ILogger implementation
+    ├── GodotLoggerConfiguration.cs     # Options class with mode, colors, templates, min log levels
+    ├── GodotLoggerProvider.cs          # ILoggerProvider (singleton, hot-reload aware)
+    ├── LoggerMode.cs                   # LoggerMode enum (Debug / Release)
+    ├── LogTemplate.cs                  # Template parser + renderer with caching
+    ├── DeferredLogger.cs               # Lazy logger proxy (defers factory creation)
+    └── Extensions/
+        └── LoggingBuilderExtensions.cs # AddGodotLogger() extension methods
 ```
 
 ---

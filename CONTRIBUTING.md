@@ -54,7 +54,7 @@ dotnet build --configuration Release --no-restore
    ```
 
 2. **Bump the version**
-   - Edit `<Version>` in `GodotLogger.csproj`, drop the `-dev*` suffix
+   - Edit `<Version>` in `src/GodotLogger/GodotLogger.csproj`, drop the `-dev*` suffix
    - Example: `1.0.1-dev1` → `1.0.1`
 
 3. **Create a PR to merge into master**
