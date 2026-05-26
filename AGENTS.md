@@ -11,7 +11,7 @@
 
 ## NuGet Publishing
 - CI pushes to NuGet only on tags matching `v*` (see `.github/workflows/build.yml`)
-- Update `<Version>` in `GodotLogger.csproj` when cutting a release
+- Update `<Version>` in `src/GodotLogger/GodotLogger.csproj` when cutting a release
 
 ## SDK Pin
 - `global.json` requires .NET SDK `8.0.x` (no prerelease); roll-forward allowed within `8.x`
