@@ -37,11 +37,11 @@ By default the field is `private static readonly ILogger<T>`. Each class gets it
 
 ## Options
 
-| Property        | Type                  | Default               | Description                                                                                          |
-|-----------------|-----------------------|-----------------------|------------------------------------------------------------------------------------------------------|
-| `FieldName`     | `string`              | `"Logger"`            | Name of the generated field                                                                          |
-| `Category`      | `string?`             | `null`                | Explicit category name. When set, the field type is `ILogger` and `GodotLog.CreateLogger("…")` is used instead of the generic overload. |
-| `Accessibility` | `LoggerAccessibility` | `Private`             | Access modifier of the generated field (`Private`, `Protected`, `Internal`, `Public`)                |
+| Property        | Type                  | Default               | Description                                                                           |
+|-----------------|-----------------------|-----------------------|---------------------------------------------------------------------------------------|
+| `FieldName`     | `string`              | `"Logger"`            | Name of the generated field                                                           |
+| `Category`      | `string?`             | `null`                | Explicit category name used in the Logger message                                     |
+| `Accessibility` | `LoggerAccessibility` | `Private`             | Access modifier of the generated field (`Private`, `Protected`, `Internal`, `Public`) |
 
 ```csharp
 // Custom field name — useful when 'Logger' would conflict with an existing member
@@ -54,7 +54,7 @@ public partial class PlayerController : Node
     }
 }
 
-// Custom category name — field type becomes ILogger instead of ILogger<T>
+// Custom category name
 [GodotLogger(Category = "MyGame.AI")]
 public partial class EnemyAI : Node
 {
@@ -63,10 +63,6 @@ public partial class EnemyAI : Node
         Logger.LogInformation("EnemyAI ready!");
     }
 }
-
-// Generated:
-// private static readonly ILogger Logger =
-//     GodotLog.CreateLogger("MyGame.AI");
 
 // Custom accessibility — useful for base classes that expose the logger to subclasses
 [GodotLogger(Accessibility = LoggerAccessibility.Protected)]
