@@ -42,6 +42,13 @@
     </ItemGroup>
 
     <ItemGroup>
+        <None Include="..\Generator\bin\$(Configuration)\netstandard2.0\Generator.dll"
+              Pack="true"
+              PackagePath="analyzers/dotnet/cs"
+              Visible="false" />
+    </ItemGroup>
+
+    <ItemGroup>
         <None Include="..\..\README.md" Pack="true" PackagePath="\"/>
     </ItemGroup>
 
