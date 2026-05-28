@@ -127,7 +127,11 @@ public partial class GameManager : Node
     public override void _Ready() => Logger.LogInformation("GameManager ready!");
 }
 ```
-[Full source generator documentation](GodotLogger.Generator/README.md)
+- Use `FieldName` to customize the generated field name (default is `Logger`)
+- Use `Category` to provide an explicit category name
+- Use `Accessibility` to expose the logger field to subclasses or the assembly (default is `private`)
+
+[Full source generator documentation](src/Generator/README.md)
 
 ---
 

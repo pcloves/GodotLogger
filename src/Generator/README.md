@@ -30,16 +30,18 @@ partial class GameManager
 }
 ```
 
-The field is always `private static readonly`. Each class gets its own strongly-typed `ILogger<T>`,
-so log output automatically carries the correct category name — no manual wiring needed.
+By default the field is `private static readonly ILogger<T>`. Each class gets its own strongly-typed
+`ILogger<T>`, so log output automatically carries the correct category name — no manual wiring needed.
 
 ---
 
 ## Options
 
-| Property    | Type     | Default    | Description                 |
-|-------------|----------|------------|-----------------------------|
-| `FieldName` | `string` | `"Logger"` | Name of the generated field |
+| Property        | Type                  | Default               | Description                                                                                          |
+|-----------------|-----------------------|-----------------------|------------------------------------------------------------------------------------------------------|
+| `FieldName`     | `string`              | `"Logger"`            | Name of the generated field                                                                          |
+| `Category`      | `string?`             | `null`                | Explicit category name. When set, the field type is `ILogger` and `GodotLog.CreateLogger("…")` is used instead of the generic overload. |
+| `Accessibility` | `LoggerAccessibility` | `Private`             | Access modifier of the generated field (`Private`, `Protected`, `Internal`, `Public`)                |
 
 ```csharp
 // Custom field name — useful when 'Logger' would conflict with an existing member
@@ -48,7 +50,28 @@ public partial class PlayerController : Node
 {
     public override void _Ready()
     {
-        GdLog.LogInformation("GameManager ready!");
+        GdLog.LogInformation("PlayerController ready!");
     }
+}
+
+// Custom category name — field type becomes ILogger instead of ILogger<T>
+[GodotLogger(Category = "MyGame.AI")]
+public partial class EnemyAI : Node
+{
+    public override void _Ready()
+    {
+        Logger.LogInformation("EnemyAI ready!");
+    }
+}
+
+// Generated:
+// private static readonly ILogger Logger =
+//     GodotLog.CreateLogger("MyGame.AI");
+
+// Custom accessibility — useful for base classes that expose the logger to subclasses
+[GodotLogger(Accessibility = LoggerAccessibility.Protected)]
+public partial class BaseNode : Node
+{
+    // Logger is 'protected static readonly ILogger<BaseNode>'
 }
 ```
