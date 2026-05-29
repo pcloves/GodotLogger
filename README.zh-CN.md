@@ -28,6 +28,7 @@
 - **按模式设置最低日志级别** — `DebugMinLogLevel`（默认 `Debug`）和 `ReleaseMinLogLevel`（默认
   `Information`）；在 `ILogger.IsEnabled` 级别过滤，零格式化开销
 - 模板解析**已缓存**，渲染缓冲区预分配 — 运行时分配极少
+- **Source generator** — 当给任意 `partial` 类加上 `[GodotLogger]` 特性时，自动注入 `ILogger<T>` 字段，无需样板代码
 - 目标 **.NET 8**，启用可空注解
 
 ---
@@ -59,6 +60,16 @@ public partial class Main : Node
 {
     private static readonly ILogger Logger = GodotLog.CreateLogger<Main>();
 
+    public override void _Ready()
+    {
+        Logger.LogInformation("Hello from GodotLogger!");
+    }
+}
+
+//或使用 [GodotLogger] 消除样板代码：
+[GodotLogger]
+public partial class Main : Node
+{
     public override void _Ready()
     {
         Logger.LogInformation("Hello from GodotLogger!");
@@ -100,6 +111,26 @@ public partial class Main : Node
 ![Godot Editor Demo](https://raw.githubusercontent.com/pcloves/GodotLogger/master/assets/godot-editor-demo.gif)
 
 </details>
+
+---
+
+## ⚡ Source Generator
+
+当给任意 `partial` 类加上 `[GodotLogger]` 特性时，编译器会在编译时自动注入 `private static readonly ILogger<T>` 字段，无需样板代码。
+
+```csharp
+[GodotLogger]
+public partial class GameManager : Node
+{
+    public override void _Ready() => Logger.LogInformation("GameManager ready!");
+}
+```
+
+- 使用 `FieldName` 自定义生成的字段名（默认为 `Logger`）
+- 使用 `Category` 提供显式类别名称
+- 使用 `Accessibility` 向子类或程序集公开 logger 字段（默认为 `private`）
+
+[完整的 source generator 文档](src/Generator/README.md)
 
 ---
 
@@ -300,6 +331,8 @@ src/
     ├── DeferredLogger.cs               # 延迟记录器代理（延迟工厂创建）
     └── Extensions/
         └── LoggingBuilderExtensions.cs # AddGodotLogger() 扩展方法
+└── Generator/
+    └── GodotLoggerGenerator.cs        # Roslyn IIncrementalGenerator — 编译时生成 [GodotLogger] 特性 + 字段注入
 ```
 
 ---

@@ -29,6 +29,7 @@ colored by log level, and dispatched to `GD.PrintRich`, `GD.PushWarning`, or `GD
 - **Mode-specific minimum log levels** — `DebugMinLogLevel` (default `Debug`) and `ReleaseMinLogLevel` (default
   `Information`); filtered at the `ILogger.IsEnabled` level for zero formatting overhead
 - Template parsing is **cached** and render buffers are pre-sized — minimal allocation at runtime
+- **Source generator** — annotate any `partial` class with `[GodotLogger]` to auto-inject a typed `ILogger<T>` field; no boilerplate needed
 - Targets **.NET 8** with nullable annotations enabled
 
 ---
@@ -60,6 +61,16 @@ public partial class Main : Node
 {
     private static readonly ILogger Logger = GodotLog.CreateLogger<Main>();
 
+    public override void _Ready()
+    {
+        Logger.LogInformation("Hello from GodotLogger!");
+    }
+}
+
+//or use the source generator with [GodotLogger] to eliminate the boilerplate:
+[GodotLogger]
+public partial class Main : Node
+{
     public override void _Ready()
     {
         Logger.LogInformation("Hello from GodotLogger!");
@@ -102,6 +113,25 @@ By default, the output aligns categories to 16 characters (configurable via `{ca
 ![Godot Editor Demo](https://raw.githubusercontent.com/pcloves/GodotLogger/master/assets/godot-editor-demo.gif)
 
 </details>
+
+---
+
+## ⚡ Source Generator
+
+Annotate any `partial` class with `[GodotLogger]` to auto-inject a `private static readonly ILogger<T>` field — no boilerplate needed.
+
+```csharp
+[GodotLogger]
+public partial class GameManager : Node
+{
+    public override void _Ready() => Logger.LogInformation("GameManager ready!");
+}
+```
+- Use `FieldName` to customize the generated field name (default is `Logger`)
+- Use `Category` to provide an explicit category name
+- Use `Accessibility` to expose the logger field to subclasses or the assembly (default is `private`)
+
+[Full source generator documentation](src/Generator/README.md)
 
 ---
 
@@ -306,6 +336,9 @@ src/
     ├── DeferredLogger.cs               # Lazy logger proxy (defers factory creation)
     └── Extensions/
         └── LoggingBuilderExtensions.cs # AddGodotLogger() extension methods
+└── Generator/
+    └── GodotLoggerGenerator.cs        # Roslyn IIncrementalGenerator — emits [GodotLogger] attribute + field injection
+
 ```
 
 ---
