@@ -329,6 +329,7 @@ src/
     ├── LoggerMode.cs                   # LoggerMode 枚举（Debug / Release）
     ├── LogTemplate.cs                  # 模板解析器 + 渲染器（带缓存）
     ├── DeferredLogger.cs               # 延迟记录器代理（延迟工厂创建）
+    ├── DeferredLoggerFactory.cs        # 惰性 ILoggerFactory 代理（由 GodotLog.Factory 返回）
     └── Extensions/
         └── LoggingBuilderExtensions.cs # AddGodotLogger() 扩展方法
 └── Generator/

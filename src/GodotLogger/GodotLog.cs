@@ -9,17 +9,25 @@ namespace GodotLogger;
 ///     Configuration is auto-discovered (environment variable, executable directory, project root).
 /// </summary>
 /// <remarks>
+///     <para><b>Lazy factory</b></para>
+///     <para>
+///     <see cref="Factory" /> returns a zero-cost <see cref="ILoggerFactory" /> proxy; the real
+///     logging pipeline is created lazily on first actual use (the first log write or
+///     <see cref="ILogger.IsEnabled" /> call), never by merely reading <see cref="Factory" />.
+///     Assigning <see cref="Factory" /> from constructors, static initializers, or anywhere else
+///     that can run inside a Godot C# assembly reload window is therefore safe.
+///     </para>
 ///     <para><b>Configuration lifecycle</b></para>
 ///     <para>
 ///     <see cref="Configure" /> may only be called <b>before</b> the first log is written
-///     (i.e. before <see cref="Factory" /> is materialized). Calling it later throws
+///     (i.e. before the real pipeline is created). Calling it later throws
 ///     <see cref="InvalidOperationException" />.
 ///     </para>
 ///     <para>
 ///     Fields assigned in the <see cref="Configure" /> delegate are effectively "locked":
-///     because the delegate is re-executed by the Options pipeline after every JSON reload,
-///     it always overwrites values coming from <c>appsettings.json</c>. Fields the delegate
-///     does not touch continue to track JSON hot-reload changes.
+///     because the delegate is re-executed by the Options pipeline after every JSON reload, it
+///     always overwrites values coming from <c>appsettings.json</c>. Fields the delegate does not
+///     touch continue to track JSON hot-reload changes.
 ///     </para>
 ///     <para>
 ///     The <see cref="Configure" /> delegate must be idempotent — it may be invoked multiple
@@ -32,6 +40,10 @@ public static class GodotLog
     private static readonly object ConfigureLock = new();
     private static Action<GodotLoggerConfiguration>? _configure;
 
+    // The single public entry point: a zero-cost proxy. Reading it never creates the real pipeline.
+    private static readonly DeferredLoggerFactory FactoryProxy = DeferredLoggerFactory.Instance;
+
+    // The real factory, created on first internal need; Lazy<T> guarantees thread-safe creation.
     private static readonly Lazy<ILoggerFactory> LazyFactory = new(() => LoggerFactory.Create(builder =>
     {
         if (_configure != null)
@@ -47,8 +59,7 @@ public static class GodotLog
     /// <param name="configure">A delegate to configure <see cref="GodotLoggerConfiguration" />.</param>
     /// <exception cref="ArgumentNullException"><paramref name="configure" /> is <see langword="null" />.</exception>
     /// <exception cref="InvalidOperationException">
-    ///     The logger factory has already been materialized (i.e. a log was already written or
-    ///     <see cref="Factory" /> was already accessed).
+    ///     The real logging pipeline has already been created (i.e. a log was already written).
     /// </exception>
     public static void Configure(Action<GodotLoggerConfiguration> configure)
     {
@@ -66,9 +77,41 @@ public static class GodotLog
     }
 
     /// <summary>
-    ///     Gets the global <see cref="ILoggerFactory" /> instance pre-configured with the Godot logger provider.
+    ///     Gets the global <see cref="ILoggerFactory" />. The returned instance is a lightweight
+    ///     lazy proxy — merely reading this property never creates the real logging pipeline, so it
+    ///     is safe to assign it anywhere (constructors, static initializers, or a Godot C#
+    ///     assembly reload window). The real pipeline is created on the first log write or
+    ///     <see cref="ILogger.IsEnabled" /> call.
     /// </summary>
-    public static ILoggerFactory Factory
+    public static ILoggerFactory Factory => FactoryProxy;
+
+    /// <summary>
+    ///     Creates an <see cref="ILogger{T}" /> for the specified type. The returned instance is a
+    ///     lightweight proxy: the real logging pipeline is not created until the first call to
+    ///     <see cref="ILogger.Log{TState}" /> or <see cref="ILogger.IsEnabled" />.
+    ///     This makes it safe to use in <c>static readonly</c> fields without preventing later
+    ///     <see cref="Configure" /> calls.
+    /// </summary>
+    /// <typeparam name="T">The type to create the logger for.</typeparam>
+    /// <returns>An <see cref="ILogger{T}" /> instance.</returns>
+    public static ILogger<T> CreateLogger<T>() => new DeferredLogger<T>(static () => FactoryProxy.Inner);
+
+    /// <summary>
+    ///     Creates an <see cref="ILogger" /> for the specified category name. The returned instance
+    ///     is a lightweight proxy that defers creating the real logging pipeline until the first
+    ///     log call.
+    /// </summary>
+    /// <param name="category">The category name for the logger.</param>
+    /// <returns>An <see cref="ILogger" /> instance.</returns>
+    public static ILogger CreateLogger(string category) => new DeferredLogger(category, static () => FactoryProxy.Inner);
+
+    /// <summary>
+    ///     Gets the real factory. Internal entry point used by <see cref="DeferredLoggerFactory" />;
+    ///     accessing it creates the pipeline if it does not exist yet. Creation is serialized with
+    ///     <see cref="Configure" /> so that a concurrent <see cref="Configure" /> call cannot be
+    ///     lost to a creation race.
+    /// </summary>
+    internal static ILoggerFactory RealFactory
     {
         get
         {
@@ -78,24 +121,4 @@ public static class GodotLog
             }
         }
     }
-
-    /// <summary>
-    ///     Creates an <see cref="ILogger{T}" /> for the specified type. The returned instance is a
-    ///     lightweight proxy: the underlying <see cref="Factory" /> is not materialized until the
-    ///     first call to <see cref="ILogger.Log{TState}" /> or <see cref="ILogger.IsEnabled" />.
-    ///     This makes it safe to use in <c>static readonly</c> fields without preventing later
-    ///     <see cref="Configure" /> calls.
-    /// </summary>
-    /// <typeparam name="T">The type to create the logger for.</typeparam>
-    /// <returns>An <see cref="ILogger{T}" /> instance.</returns>
-    public static ILogger<T> CreateLogger<T>() => new DeferredLogger<T>(static () => Factory);
-
-    /// <summary>
-    ///     Creates an <see cref="ILogger" /> for the specified category name. The returned instance
-    ///     is a lightweight proxy that defers materializing <see cref="Factory" /> until the first
-    ///     log call.
-    /// </summary>
-    /// <param name="category">The category name for the logger.</param>
-    /// <returns>An <see cref="ILogger" /> instance.</returns>
-    public static ILogger CreateLogger(string category) => new DeferredLogger(category, static () => Factory);
 }
