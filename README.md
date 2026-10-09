@@ -103,6 +103,31 @@ By default, the output aligns categories to 16 characters (configurable via `{ca
 
 > **💡Tip:** Godot has built-in file logging support! Enable it via **Project → Project Settings → debug/file_logging/enable_file_logging** (toggle to On). You can customize the log path via `debug/file_logging/log_path` (e.g., `user://logs/godot.log`). Since GodotLogger uses `GD.Print*` under the hood, your logs will automatically be saved to file — no extra code needed.
 
+### Wiring `GodotLog` into other frameworks (hot-reload safe)
+
+Some libraries expose a static `ILoggerFactory` hook, and that hook is typically assigned from a
+constructor or a static initializer. Assigning `GodotLog.Factory` there materializes the whole
+Microsoft.Extensions.Logging pipeline immediately — and in the Godot editor that code can run
+inside a C# assembly reload (every "Rebuild Project" re-creates script instances and re-runs
+their constructors). If any assembly file is still being written at that moment, the eager load
+throws `BadImageFormatException` and the editor crashes while recreating the script instance
+(`csharp_script.cpp`).
+
+Use `GodotLog.DeferredFactory` instead — a zero-cost `ILoggerFactory` proxy that materializes the
+real factory on first use:
+
+```csharp
+// Don't: materializes the factory as soon as the constructor runs.
+MyStaticLogger.Factory = GodotLog.Factory;
+
+// Do: wiring is free; the factory is created at the first log call.
+MyStaticLogger.Factory = GodotLog.DeferredFactory;
+```
+
+`DeferredFactory` implements `ILoggerFactory`: `CreateLogger` returns the same deferred loggers as
+`GodotLog.CreateLogger(...)`, while `AddProvider` and `Dispose` are no-ops — providers are
+configured through `GodotLog.Configure` / `AddGodotLogger`.
+
 ---
 
 ## 🎬 Demo
@@ -334,6 +359,7 @@ src/
     ├── LoggerMode.cs                   # LoggerMode enum (Debug / Release)
     ├── LogTemplate.cs                  # Template parser + renderer with caching
     ├── DeferredLogger.cs               # Lazy logger proxy (defers factory creation)
+    ├── DeferredLoggerFactory.cs        # ILoggerFactory proxy returned by GodotLog.DeferredFactory
     └── Extensions/
         └── LoggingBuilderExtensions.cs # AddGodotLogger() extension methods
 └── Generator/
