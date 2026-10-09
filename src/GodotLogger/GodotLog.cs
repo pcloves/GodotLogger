@@ -80,37 +80,6 @@ public static class GodotLog
     }
 
     /// <summary>
-    ///     Gets a zero-cost <see cref="ILoggerFactory" /> proxy that defers materializing
-    ///     <see cref="Factory" /> until a logger is actually used.
-    /// </summary>
-    /// <remarks>
-    ///     <para>
-    ///     Prefer this property over <see cref="Factory" /> when wiring the factory into another
-    ///     library (for example assigning it to a static logging facade) from a constructor, a
-    ///     static initializer, or any other code that may run during a Godot C# assembly reload.
-    ///     Accessing <see cref="Factory" /> materializes the whole Microsoft.Extensions.Logging
-    ///     pipeline eagerly, which can throw (<c>BadImageFormatException</c>) inside the reload
-    ///     window and take the editor down with it.
-    ///     </para>
-    ///     <para>
-    ///     The returned proxy implements <see cref="ILoggerFactory" />: <c>CreateLogger</c> returns
-    ///     the same deferred loggers as <see cref="CreateLogger(string)" />, while <c>AddProvider</c>
-    ///     and <c>Dispose</c> are no-ops because providers are configured through
-    ///     <see cref="Configure" />.
-    ///     </para>
-    /// </remarks>
-    /// <example>
-    ///     <code>
-    ///     // Don't: materializes the factory as soon as this line runs.
-    ///     MyStaticLogger.Factory = GodotLog.Factory;
-    ///
-    ///     // Do: wiring is free; the factory is created at the first log call.
-    ///     MyStaticLogger.Factory = GodotLog.DeferredFactory;
-    ///     </code>
-    /// </example>
-    public static ILoggerFactory DeferredFactory { get; } = DeferredLoggerFactory.Instance;
-
-    /// <summary>
     ///     Creates an <see cref="ILogger{T}" /> for the specified type. The returned instance is a
     ///     lightweight proxy: the underlying <see cref="Factory" /> is not materialized until the
     ///     first call to <see cref="ILogger.Log{TState}" /> or <see cref="ILogger.IsEnabled" />.

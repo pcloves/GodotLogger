@@ -101,29 +101,6 @@ public partial class Main : Node
 
 > **💡提示：** Godot 原生支持文件日志！通过 **Project → Project Settings → debug/file_logging/enable_file_logging** 启用（切换为 On）。可通过 `debug/file_logging/log_path` 自定义日志路径（例如 `user://logs/godot.log`）。由于 GodotLogger 底层使用 `GD.Print*`，启用后日志会自动保存到文件 — 无需额外代码。
 
-### 将 `GodotLog` 接入其他框架（热重载安全）
-
-有些库会暴露静态的 `ILoggerFactory` 挂载点，通常会在构造函数或静态初始化器中完成赋值。
-在那里直接赋值 `GodotLog.Factory` 会立即物化整条 Microsoft.Extensions.Logging 管线 — 而在
-Godot 编辑器中，这段代码可能运行于 C# 程序集热重载窗口内（每次 "Rebuild Project" 都会重建
-脚本实例并重新执行其构造函数）。如果此时仍有程序集文件处于写入状态，这次急切加载会抛出
-`BadImageFormatException`，编辑器会在重建脚本实例时崩溃（`csharp_script.cpp`）。
-
-请改用 `GodotLog.DeferredFactory` — 一个零成本的 `ILoggerFactory` 代理，首次使用日志时才
-物化真正的工厂：
-
-```csharp
-// 不要：构造函数一执行就物化了工厂。
-MyStaticLogger.Factory = GodotLog.Factory;
-
-// 推荐：接线零成本，首次写日志时才创建工厂。
-MyStaticLogger.Factory = GodotLog.DeferredFactory;
-```
-
-`DeferredFactory` 实现了 `ILoggerFactory`：`CreateLogger` 返回与 `GodotLog.CreateLogger(...)`
-相同的延迟记录器；`AddProvider` 与 `Dispose` 为空操作 — Provider 请通过
-`GodotLog.Configure` / `AddGodotLogger` 配置。
-
 ---
 
 ## 🎬 演示
@@ -352,7 +329,6 @@ src/
     ├── LoggerMode.cs                   # LoggerMode 枚举（Debug / Release）
     ├── LogTemplate.cs                  # 模板解析器 + 渲染器（带缓存）
     ├── DeferredLogger.cs               # 延迟记录器代理（延迟工厂创建）
-    ├── DeferredLoggerFactory.cs        # ILoggerFactory 代理（由 GodotLog.DeferredFactory 返回）
     └── Extensions/
         └── LoggingBuilderExtensions.cs # AddGodotLogger() 扩展方法
 └── Generator/
