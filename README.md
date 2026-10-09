@@ -334,6 +334,7 @@ src/
     ├── LoggerMode.cs                   # LoggerMode enum (Debug / Release)
     ├── LogTemplate.cs                  # Template parser + renderer with caching
     ├── DeferredLogger.cs               # Lazy logger proxy (defers factory creation)
+    ├── DeferredLoggerFactory.cs        # Lazy ILoggerFactory proxy returned by GodotLog.Factory
     └── Extensions/
         └── LoggingBuilderExtensions.cs # AddGodotLogger() extension methods
 └── Generator/

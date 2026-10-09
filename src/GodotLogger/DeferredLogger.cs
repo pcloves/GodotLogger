@@ -5,7 +5,7 @@ namespace GodotLogger;
 /// <summary>
 ///     Proxy <see cref="ILogger" /> that defers resolving the real logger until first use, so that
 ///     declaring <c>static readonly ILogger Logger = GodotLog.CreateLogger&lt;T&gt;()</c> does not
-///     prematurely materialize the global <see cref="ILoggerFactory" />.
+///     prematurely create the real logging pipeline behind <see cref="GodotLog.Factory" />.
 /// </summary>
 internal sealed class DeferredLogger(string category, Func<ILoggerFactory> factoryProvider) : ILogger
 {
