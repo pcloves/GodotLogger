@@ -101,11 +101,11 @@ public static class GodotLog
     /// </remarks>
     /// <example>
     ///     <code>
-    ///     // Unsafe in a constructor: materializes the factory immediately.
-    ///     LogFactory.Factory = GodotLog.Factory;
+    ///     // Don't: materializes the factory as soon as this line runs.
+    ///     MyStaticLogger.Factory = GodotLog.Factory;
     ///
-    ///     // Safe anywhere: the factory is materialized at the first log call.
-    ///     LogFactory.Factory = GodotLog.DeferredFactory;
+    ///     // Do: wiring is free; the factory is created at the first log call.
+    ///     MyStaticLogger.Factory = GodotLog.DeferredFactory;
     ///     </code>
     /// </example>
     public static ILoggerFactory DeferredFactory { get; } = DeferredLoggerFactory.Instance;
